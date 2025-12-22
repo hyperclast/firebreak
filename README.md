@@ -1,4 +1,4 @@
-# Function-Level Sandboxing via Warm MicroVMs (Python)
+# Python Function-Level Sandboxing
 
 > Goal: Allow Python functions annotated with `@permissions(...)` to execute inside **warm microVMs**, while all other functions run normally in the host process.
 
@@ -404,4 +404,3 @@ These are v2+ problems.
 - Warm pools make it practical
 - Explicit boundaries make it sane
 
-This is the correct abstraction boundary.
