@@ -1,6 +1,6 @@
 # Python Function-Level Sandboxing
 
-> Goal: Allow Python functions annotated with `@permissions(...)` to execute inside **warm microVMs**, while all other functions run normally in the host process.
+> Goal: Allow Python functions annotated with `@firebreak(...)` to execute inside **warm microVMs**, while all other functions run normally in the host process.
 
 This is **real isolation**, enforced at the OS / VM boundary.
 Decorators provide *developer ergonomics*, not security. MicroVMs provide security.
@@ -33,7 +33,7 @@ Decorators provide *developer ergonomics*, not security. MicroVMs provide securi
 
 ## TL;DR
 
-- `@permissions(...)` **replaces the function with an RPC stub**
+- `@firebreak(...)` **replaces the function with an RPC stub**
 - Calls are dispatched to a **warm Firecracker microVM pool**
 - Pools are keyed by **capability profiles**
 - Only decorated functions are affected
@@ -61,9 +61,9 @@ Decorated functions become **remote procedure calls**.
 ## User-Facing API
 
 ```python
-from sandbox import permissions
+from firebreak import firebreak
 
-@permissions(
+@firebreak(
     fs="r:/data",
     net="none",
     cpu_ms=200,
@@ -270,7 +270,7 @@ This is **orders of magnitude stronger** than in-process sandboxes.
 
 ## Minimal Components (v1)
 
-- `permissions` decorator
+- `firebreak` decorator
 - `SandboxStub`
 - `SandboxManager`
 - `ProfileHasher`
