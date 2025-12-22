@@ -5,7 +5,31 @@
 This is **real isolation**, enforced at the OS / VM boundary.
 Decorators provide *developer ergonomics*, not security. MicroVMs provide security.
 
----
+## Table of Contents
+
+- [TL;DR](#tldr)
+- [Non-Goals](#non-goals)
+- [Mental Model](#mental-model)
+- [User-Facing API](#user-facing-api)
+- [Core Design](#core-design)
+  - [1. Decorator = Stub Replacement](#1-decorator--stub-replacement)
+  - [2. Capability Profiles](#2-capability-profiles)
+  - [3. Warm MicroVM Pools](#3-warm-microvm-pools)
+- [MicroVM Responsibilities](#microvm-responsibilities)
+- [Isolation Enforcement (Where Security Actually Lives)](#isolation-enforcement-where-security-actually-lives)
+- [Serialization Contract](#serialization-contract)
+- [Function Constraints (Explicit Design Choice)](#function-constraints-explicit-design-choice)
+- [Call Flow (End-to-End)](#call-flow-end-to-end)
+- [Error Handling](#error-handling)
+- [Performance Expectations (Reality-Based)](#performance-expectations-reality-based)
+- [Snapshot / Restore Strategy (Optional but Recommended)](#snapshot--restore-strategy-optional-but-recommended)
+- [Dev vs Prod](#dev-vs-prod)
+- [Security Notes](#security-notes)
+- [Minimal Components (v1)](#minimal-components-v1)
+- [Why This Exists](#why-this-exists)
+- [Performance Characteristics & Overhead](#performance-characteristics--overhead)
+- [Open Questions (Intentionally Deferred)](#open-questions-intentionally-deferred)
+- [Summary](#summary)
 
 ## TL;DR
 
@@ -15,16 +39,12 @@ Decorators provide *developer ergonomics*, not security. MicroVMs provide securi
 - Only decorated functions are affected
 - Other Python code runs unchanged in the host
 
----
-
 ## Non-Goals
 
 - No in-process sandboxing
 - No monkey-patching / restricted builtins
 - No attempt to safely execute untrusted code inside CPython
 - No support for closures or implicit ambient state
-
----
 
 ## Mental Model
 
@@ -37,8 +57,6 @@ Host Python Process
 ```
 
 Decorated functions become **remote procedure calls**.
-
----
 
 ## User-Facing API
 
@@ -60,8 +78,6 @@ Calling `parse_claims()`:
 - dispatches to a sandboxed microVM
 - returns the result (or raises a remote exception)
 
----
-
 ## Core Design
 
 ### 1. Decorator = Stub Replacement
@@ -76,8 +92,6 @@ parse_claims = SandboxStub(
 ```
 
 The original function body is **never called in the host**.
-
----
 
 ### 2. Capability Profiles
 
@@ -95,8 +109,6 @@ Profiles are:
 
 Each unique profile → **its own microVM pool**
 
----
-
 ### 3. Warm MicroVM Pools
 
 For each profile:
@@ -109,8 +121,6 @@ Dispatch is:
 - send request over vsock
 - await response
 - return VM to pool (or recycle)
-
----
 
 ## MicroVM Responsibilities
 
@@ -133,8 +143,6 @@ Strategies:
 - or dedicate VMs to trusted code only
 - or snapshot-restore for clean state
 
----
-
 ## Isolation Enforcement (Where Security Actually Lives)
 
 ### Enforced by VM boundary, NOT Python:
@@ -150,9 +158,7 @@ Strategies:
 - **Time**
   - Per-call timeout + host kill
 
-Python inside the VM is **unrestricted**, and that’s fine.
-
----
+Python inside the VM is **unrestricted**, and that's fine.
 
 ## Serialization Contract
 
@@ -173,8 +179,6 @@ Large payloads:
 - temp files
 - mmap-backed blobs
 
----
-
 ## Function Constraints (Explicit Design Choice)
 
 Decorated functions MUST:
@@ -184,8 +188,6 @@ Decorated functions MUST:
 - not rely on ambient host globals
 
 This is a **feature**, not a limitation.
-
----
 
 ## Call Flow (End-to-End)
 
@@ -202,8 +204,6 @@ This is a **feature**, not a limitation.
    - deserializes
    - re-raises remote exception if needed
 
----
-
 ## Error Handling
 
 Remote exceptions are:
@@ -217,8 +217,6 @@ Timeouts:
 Crashes:
 - VM discarded
 - new VM pulled from pool
-
----
 
 ## Performance Expectations (Reality-Based)
 
@@ -235,8 +233,6 @@ It *is* appropriate for:
 - AI-generated code
 - policy-sensitive operations
 
----
-
 ## Snapshot / Restore Strategy (Optional but Recommended)
 
 1. Boot VM
@@ -249,8 +245,6 @@ It *is* appropriate for:
 This gives:
 - fast scale-up
 - consistent clean state
-
----
 
 ## Dev vs Prod
 
@@ -265,8 +259,6 @@ This gives:
 - aggressive recycling
 - resource quotas enforced
 
----
-
 ## Security Notes
 
 - This isolates **the function**, not the entire program
@@ -275,8 +267,6 @@ This gives:
 - Side channels (timing, resource usage) exist
 
 This is **orders of magnitude stronger** than in-process sandboxes.
-
----
 
 ## Minimal Components (v1)
 
@@ -289,8 +279,6 @@ This is **orders of magnitude stronger** than in-process sandboxes.
 - vsock RPC protocol
 - Firecracker runner / snapshot tooling
 
----
-
 ## Why This Exists
 
 Python assumes **ambient authority**.
@@ -299,12 +287,11 @@ Modern systems increasingly run:
 - AI-generated code
 - plugin ecosystems
 
-This design accepts Python’s limitations and **moves the trust boundary to the VM**, where it belongs.
+This design accepts Python's limitations and **moves the trust boundary to the VM**, where it belongs.
 
----
 ## Performance Characteristics & Overhead
 
-This system deliberately trades **raw call speed** for **strong isolation**.  
+This system deliberately trades **raw call speed** for **strong isolation**.
 The goal is *safety and correctness*, not replacing in-process function calls.
 
 Below are realistic expectations based on current Firecracker-class microVMs and vsock IPC.
@@ -343,7 +330,7 @@ Very rough but realistic ballpark per call:
 - Python dispatch + import lookup: ~0.5–2 ms
 - Return path (serialization + IPC): ~0.5–3 ms
 
-**Total typical overhead:**  
+**Total typical overhead:**
 ➡ **~1–10 ms**, depending on payload size and system load.
 
 ### Throughput Expectations
@@ -362,7 +349,7 @@ It *is* suitable for:
 
 A good rule of thumb:
 
-> If the function’s *own work* takes **<1 ms**, sandboxing will dominate.  
+> If the function's *own work* takes **<1 ms**, sandboxing will dominate.
 > If it takes **10–100+ ms**, the overhead is usually acceptable.
 
 ### Scaling Characteristics
@@ -393,13 +380,11 @@ This design pays that cost:
 
 ### Design Philosophy
 
-> This is not a faster function call.  
+> This is not a faster function call.
 > It is a safer execution boundary.
 
-If you need speed, use normal Python.  
+If you need speed, use normal Python.
 If you need isolation, **this is about as cheap as real isolation gets today**.
-
----
 
 ## Open Questions (Intentionally Deferred)
 
@@ -410,8 +395,6 @@ If you need isolation, **this is about as cheap as real isolation gets today**.
 - WASM alternative backend
 
 These are v2+ problems.
-
----
 
 ## Summary
 
