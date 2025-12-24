@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Callable, TypeVar, overload
+from collections.abc import Callable
+from typing import Any, TypeVar, overload
 
 from .manager import get_default_manager
 from .profile import ProfileHasher
 from .stub import SandboxStub
-from .types import CapabilityProfile
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -29,6 +29,7 @@ def firebreak(
     net: str | None = None,
     cpu_ms: int = 1000,
     mem_mb: int = 128,
+    dependencies: list[str] | None = None,
 ) -> Callable[[F], SandboxStub]: ...
 
 
@@ -39,6 +40,7 @@ def firebreak(
     net: str | None = None,
     cpu_ms: int = 1000,
     mem_mb: int = 128,
+    dependencies: list[str] | None = None,
 ) -> SandboxStub | Callable[[F], SandboxStub]:
     def decorator(fn: F) -> SandboxStub:
         profile, profile_key = ProfileHasher.from_kwargs(
@@ -46,6 +48,7 @@ def firebreak(
             net=net,
             cpu_ms=cpu_ms,
             mem_mb=mem_mb,
+            dependencies=dependencies,
         )
 
         function_ref = _get_function_ref(fn)
@@ -73,6 +76,7 @@ def sandbox(
     net: str | None = None,
     cpu_ms: int = 1000,
     mem_mb: int = 128,
+    dependencies: list[str] | None = None,
 ) -> Callable[[F], SandboxStub]:
-    return firebreak(fs=fs, net=net, cpu_ms=cpu_ms, mem_mb=mem_mb)
+    return firebreak(fs=fs, net=net, cpu_ms=cpu_ms, mem_mb=mem_mb, dependencies=dependencies)
 

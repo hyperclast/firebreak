@@ -6,7 +6,8 @@ import logging
 import signal
 import sys
 import traceback
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 logging.basicConfig(
     level=logging.INFO,
@@ -93,8 +94,114 @@ def execute_function(
         }
 
 
+def install_dependencies(dependencies: list[str]) -> dict[str, Any]:
+    """
+    Install dependencies using uv (preferred) or pip (fallback).
+
+    Security: subprocess.run with list args prevents shell injection.
+    Dependencies come from decorator definitions (developer code, not user input).
+    """
+    import subprocess
+
+    if not dependencies:
+        return {"success": True, "result": "No dependencies to install"}
+
+    # Validate dependency strings - basic sanity check
+    for dep in dependencies:
+        if not dep or not isinstance(dep, str):
+            return {
+                "success": False,
+                "result": None,
+                "error": {
+                    "type": "ValidationError",
+                    "message": f"Invalid dependency specification: {dep!r}",
+                    "traceback": "",
+                },
+            }
+
+    try:
+        # Try uv first (faster, more reliable)
+        # --system: allow system Python (no venv required in microVM)
+        # --no-progress: cleaner logs, avoid terminal detection issues
+        try:
+            cmd = ["uv", "pip", "install", "--system", "--no-progress"] + list(dependencies)
+            logger.info(f"Installing dependencies with uv: {dependencies}")
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=300,  # 5 minute timeout for large packages
+            )
+        except FileNotFoundError:
+            # uv not available, fall back to pip
+            # --disable-pip-version-check: skip update nag
+            # --no-input: never prompt (would hang in VM)
+            cmd = [
+                "pip", "install",
+                "--disable-pip-version-check",
+                "--no-input",
+            ] + list(dependencies)
+            logger.info(f"Installing dependencies with pip (uv unavailable): {dependencies}")
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=300,
+            )
+
+        if result.returncode != 0:
+            error_output = result.stderr or result.stdout
+            logger.error(f"Installation failed: {error_output}")
+            return {
+                "success": False,
+                "result": None,
+                "error": {
+                    "type": "InstallError",
+                    "message": f"Failed to install dependencies: {error_output[:500]}",
+                    "traceback": error_output,
+                },
+            }
+
+        logger.info(f"Dependencies installed successfully: {dependencies}")
+        return {"success": True, "result": f"Installed: {dependencies}"}
+
+    except subprocess.TimeoutExpired:
+        logger.error("Dependency installation timed out after 300s")
+        return {
+            "success": False,
+            "result": None,
+            "error": {
+                "type": "TimeoutError",
+                "message": "Dependency installation timed out after 300 seconds",
+                "traceback": "",
+            },
+        }
+    except Exception as e:
+        logger.exception("Unexpected error during dependency installation")
+        return {
+            "success": False,
+            "result": None,
+            "error": {
+                "type": type(e).__name__,
+                "message": str(e),
+                "traceback": traceback.format_exc(),
+            },
+        }
+
+
 def handle_request(request_data: dict[str, Any]) -> dict[str, Any]:
     request_id = request_data.get("request_id", "unknown")
+
+    # Handle special commands
+    command = request_data.get("command")
+    if command == "install":
+        dependencies = request_data.get("dependencies", [])
+        logger.info(f"Received install command for: {dependencies}")
+        result = install_dependencies(dependencies)
+        result["request_id"] = request_id
+        return result
+
+    # Normal function execution
     function_ref = request_data.get("function_ref", "")
     args = tuple(request_data.get("args", []))
     kwargs = request_data.get("kwargs", {})
@@ -115,7 +222,6 @@ class ExecutorServer:
 
     def start(self) -> None:
         import socket
-        import struct
 
         try:
             listener = socket.socket(socket.AF_VSOCK, socket.SOCK_STREAM)

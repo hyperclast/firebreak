@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import asyncio
 import uuid
-from typing import TYPE_CHECKING, Any, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 
 from .exceptions import SandboxError, deserialize_exception
 from .types import CapabilityProfile, RPCRequest, RPCResponse

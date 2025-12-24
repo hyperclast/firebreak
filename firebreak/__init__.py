@@ -11,9 +11,15 @@ from .exceptions import (
 from .manager import SandboxManager, get_default_manager, set_default_manager
 from .pool import PoolConfig, VMWorkerPool
 from .profile import ProfileHasher
-from .runner import FirecrackerConfig, FirecrackerRunner, LocalFirecrackerRunner, MockFirecrackerRunner
+from .runner import (
+    FirecrackerConfig,
+    FirecrackerRunner,
+    LocalFirecrackerRunner,
+    MockFirecrackerRunner,
+    SnapshotInfo,
+)
 from .stub import SandboxStub
-from .types import CapabilityProfile, FSMount, FileSystemAccess, NetworkPolicy, VMConfig
+from .types import CapabilityProfile, FileSystemAccess, FSMount, NetworkPolicy, VMConfig
 
 __version__ = "0.1.0"
 
@@ -41,6 +47,7 @@ __all__ = [
     "FirecrackerRunner",
     "LocalFirecrackerRunner",
     "MockFirecrackerRunner",
+    "SnapshotInfo",
     "get_default_manager",
     "set_default_manager",
     "__version__",

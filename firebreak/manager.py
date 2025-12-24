@@ -6,9 +6,14 @@ from typing import Any
 
 from .exceptions import SandboxTimeoutError
 from .pool import PoolConfig, PoolManager
-from .runner import FirecrackerConfig, FirecrackerRunner, LocalFirecrackerRunner, MockFirecrackerRunner
+from .runner import (
+    FirecrackerConfig,
+    FirecrackerRunner,
+    LocalFirecrackerRunner,
+    MockFirecrackerRunner,
+)
 from .stub import SandboxStub
-from .types import CapabilityProfile, VMConfig
+from .types import VMConfig
 
 logger = logging.getLogger(__name__)
 
