@@ -10,22 +10,24 @@ readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.10"
 authors = [
-    { name = "Firebreak Authors" }
+    { name = "Kirubakaran Athmanathan", email = "k@insstant.com" }
 ]
 keywords = ["sandbox", "microvm", "firecracker", "isolation", "security"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Security",
     "Topic :: System :: Operating System Kernels :: Linux",
 ]
 dependencies = [
     "msgpack>=1.0.0",
+    "aiohttp>=3.8.0",
 ]
 
 [project.optional-dependencies]
@@ -37,9 +39,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/firebreak/firebreak"
-Documentation = "https://github.com/firebreak/firebreak"
-Repository = "https://github.com/firebreak/firebreak"
+Homepage = "https://hyperclast.com/dev/oss/firebreak/"
+Documentation = "https://github.com/hyperclast/firebreak/blob/master/README.md"
+Repository = "https://github.com/hyperclast/firebreak"
 
 [tool.hatch.build.targets.wheel]
 packages = ["firebreak"]
