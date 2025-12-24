@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 256 256"
+     role="img"
+     aria-label="Firebreak logo mark">
+
+  <!-- LEFT: outer shield (dark red) -->
+  <path
+    d="M128 16
+       C84 28 52 40 52 40
+       V140
+       C52 188 92 220 128 240
+       Z"
+    fill="#9F1D1D"/>
+
+  <!-- RIGHT: outer shield (dark blue) -->
+  <path
+    d="M128 16
+       C172 28 204 40 204 40
+       V140
+       C204 188 164 220 128 240
+       Z"
+    fill="#1E3A8A"/>
+
+  <!-- LEFT: inner shield (fiery orange) -->
+  <path
+    d="M128 32
+       C96 42 72 52 72 52
+       V138
+       C72 168 100 194 128 210
+       Z"
+    fill="#F97316"/>
+
+  <!-- RIGHT: inner shield (light blue) -->
+  <path
+    d="M128 32
+       C160 42 184 52 184 52
+       V138
+       C184 168 156 194 128 210
+       Z"
+    fill="#60A5FA"/>
+
+  <!-- CENTER: bright gold firebreak -->
+  <path
+    d="M128 32
+       L118 64
+       L138 96
+       L118 128
+       L138 160
+       L118 192
+       L128 210
+       L138 192
+       L118 160
+       L138 128
+       L118 96
+       L138 64
+       Z"
+    fill="#FACC15"/>
+
+  <!-- CODE ANGLE BRACKETS (white) -->
+  <path
+    d="M150 116 L166 100 L162 96 L142 116 L162 136 L166 132 Z"
+    fill="#FFFFFF"/>
+
+  <path
+    d="M190 116 L174 100 L178 96 L198 116 L178 136 L174 132 Z"
+    fill="#FFFFFF"/>
+
+</svg>

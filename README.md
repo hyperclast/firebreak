@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="misc/logo.svg" alt="firebreak logo" width="400">
+</p>
+
 # Python Function-Level Sandboxing
 
 > Goal: Allow Python functions annotated with `@firebreak(...)` to execute inside **warm microVMs**, while all other functions run normally in the host process.
