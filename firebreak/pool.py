@@ -3,16 +3,17 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, AsyncIterator
+from typing import TYPE_CHECKING, Any
 
 from .exceptions import VMPoolExhaustedError, VMStartupError
-from .rpc import RPCClient, VsockConnection
+from .rpc import RPCClient
 from .types import CapabilityProfile, RPCRequest, RPCResponse, VMConfig
 
 if TYPE_CHECKING:
-    from .runner import FirecrackerRunner
+    from .runner import FirecrackerRunner, SnapshotInfo
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +68,7 @@ class VMWorkerPool:
         self._cid_counter = 100
         self._shutdown = False
         self._maintenance_task: asyncio.Task[None] | None = None
+        self._snapshot: SnapshotInfo | None = None
 
     @property
     def total_count(self) -> int:
@@ -82,6 +84,18 @@ class VMWorkerPool:
 
     async def start(self) -> None:
         logger.info(f"Starting VM pool for profile {self.profile_key}")
+
+        # Provision snapshot if profile has dependencies
+        if self.profile.dependencies:
+            logger.info(f"Provisioning snapshot for dependencies: {self.profile.dependencies}")
+            self._snapshot = await self._runner.provision_snapshot(
+                profile=self.profile,
+                profile_key=self.profile_key,
+                config=self._vm_config,
+            )
+            if self._snapshot:
+                logger.info(f"Snapshot ready: {self._snapshot.snapshot_path}")
+
         for _ in range(self._pool_config.min_size):
             try:
                 vm = await self._create_vm()
@@ -121,12 +135,21 @@ class VMWorkerPool:
         logger.debug(f"Creating VM {vm_id}")
 
         try:
-            process = await self._runner.start_vm(
-                vm_id=vm_id,
-                config=self._vm_config,
-                cid=cid,
-                profile=self.profile,
-            )
+            # Use snapshot restore if available (dependencies pre-installed)
+            if self._snapshot:
+                logger.debug(f"Restoring VM {vm_id} from snapshot")
+                process = await self._runner.restore_snapshot(
+                    vm_id=vm_id,
+                    snapshot_path=self._snapshot.snapshot_path,
+                    cid=cid,
+                )
+            else:
+                process = await self._runner.start_vm(
+                    vm_id=vm_id,
+                    config=self._vm_config,
+                    cid=cid,
+                    profile=self.profile,
+                )
 
             vm = VMInstance(
                 vm_id=vm_id,

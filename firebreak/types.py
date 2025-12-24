@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, TypeVar
+from typing import Any, TypeVar
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -61,6 +62,7 @@ class CapabilityProfile:
     net: NetworkPolicy = NetworkPolicy.NONE
     cpu_ms: int = 1000
     mem_mb: int = 128
+    dependencies: tuple[str, ...] = field(default_factory=tuple)
 
     def __post_init__(self) -> None:
         if self.cpu_ms <= 0:
@@ -75,6 +77,7 @@ class CapabilityProfile:
         net: str | None = None,
         cpu_ms: int = 1000,
         mem_mb: int = 128,
+        dependencies: list[str] | None = None,
     ) -> CapabilityProfile:
         fs_mounts: list[FSMount] = []
         if fs is not None:
@@ -87,16 +90,23 @@ class CapabilityProfile:
         if net is not None:
             net_policy = NetworkPolicy(net)
 
+        deps: tuple[str, ...] = ()
+        if dependencies is not None:
+            # Sort for canonical representation
+            deps = tuple(sorted(dependencies))
+
         return cls(
             fs_mounts=tuple(sorted(fs_mounts, key=str)),
             net=net_policy,
             cpu_ms=cpu_ms,
             mem_mb=mem_mb,
+            dependencies=deps,
         )
 
     def canonical_repr(self) -> str:
         parts = [
             f"cpu_ms={self.cpu_ms}",
+            f"deps={','.join(self.dependencies) or 'none'}",
             f"fs={','.join(str(m) for m in self.fs_mounts) or 'none'}",
             f"mem_mb={self.mem_mb}",
             f"net={self.net.value}",
