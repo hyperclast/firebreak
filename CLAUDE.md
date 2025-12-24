@@ -62,8 +62,35 @@ Each unique combination of permissions creates a separate VM pool:
 - `net`: network policy (`"none"`, `"https-only"`, `"all"`)
 - `cpu_ms`: execution timeout
 - `mem_mb`: memory limit
+- `dependencies`: list of pip packages to pre-install in VMs
 
 Profiles are canonicalized and SHA256-hashed to create pool keys.
+
+### Dependency Management
+
+Third-party packages can be specified per-function:
+
+```python
+@firebreak(
+    net="https-only",
+    cpu_ms=5000,
+    dependencies=["requests", "pandas>=2.0"],
+)
+def fetch_data(url: str) -> dict:
+    import requests
+    import pandas as pd
+    ...
+```
+
+**Provisioning flow:**
+1. When pool starts, if profile has dependencies:
+   - Boot a base VM
+   - Send install command to executor (`uv pip install` or `pip install`)
+   - Take Firecracker snapshot
+2. All warm VMs restore from this snapshot (deps pre-installed)
+3. Function calls use already-warm VMs with no install overhead
+
+Different dependency sets create separate pools with their own snapshots.
 
 ### VM Lifecycle
 
