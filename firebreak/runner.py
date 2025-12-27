@@ -350,8 +350,14 @@ class LocalFirecrackerRunner(FirecrackerRunner):
         mem_path: str,
     ) -> None:
         """Create snapshot via Firecracker API socket."""
-        import aiohttp
-        from aiohttp import UnixConnector
+        try:
+            import aiohttp
+            from aiohttp import UnixConnector
+        except ImportError:
+            raise ImportError(
+                "aiohttp is required for Firecracker snapshot creation. "
+                "Install it with: pip install firebreak[firecracker]"
+            ) from None
 
         connector = UnixConnector(path=vm.socket_path)
         async with aiohttp.ClientSession(connector=connector) as session:
